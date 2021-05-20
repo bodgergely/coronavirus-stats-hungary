@@ -1,4 +1,5 @@
 #!python
+from collections import defaultdict
 from os import error
 import sys
 import requests
@@ -71,7 +72,32 @@ def scrape(argv):
     sys.stderr.write('\n')
 
 
-def reload(filepath: str) -> List[Record]:
+
+g_unicode_to_ascii_table = {
+    '\xa0' : ' ',
+    'á': 'a',
+    'û': 'u',
+    'ú': 'u',
+    'ü': 'u',
+    'õ': 'o',
+    '”': "\"",
+    '„': '\"',
+    'ó': 'o',
+    'í': 'i',
+    'ö': 'o',
+    'é': 'e'
+}
+
+def remove_unicode(text, convert_table=g_unicode_to_ascii_table) -> str:
+    res = []
+    for c in text:
+        if c in convert_table:
+            res.append(convert_table[c])
+        else:
+            res.append(c)
+    return "".join(res)
+
+def reload(filepath: str, asciifi=True) -> List[Record]:
     records = []
     tokens_less_than_four_error = 0
     for line in open(filepath):
@@ -81,12 +107,76 @@ def reload(filepath: str) -> List[Record]:
             tokens_less_than_four_error += 1
             continue
         id = tokens[0]
-        gender = tokens[1]
+        gender = tokens[1].lower()
+        if asciifi:
+            gender = remove_unicode(gender, {'é':'e', 'õ': 'o'}).lower();
         age = tokens[2]
-        illnesses = "".join(tokens[3:]).split(",")
+        illnesses = [remove_unicode(t.lower()) for t in "".join(tokens[3:]).split(",") if t != '']
         records.append(Record(id, gender, age, illnesses))
     sys.stderr.write("tokens_less_than_four_error: " + str(tokens_less_than_four_error))
     return records
+
+
+
+def determine_chars_from_illnesses(records: List[Record]):
+    chars = set()
+    for r in records:
+        chars = chars.union(character_types(",".join(r.illnesses)))
+    return chars
+
+def count_genders(records: List[Record]):
+    res = defaultdict(int)
+    for r in records:
+        res[r.gender] += 1
+    return res
+
+def count_illness_types(records: List[Record]):
+    res = defaultdict(int)
+    for r in records:
+        for illness in r.illnesses:
+            res[illness] += 1
+    return res
+
+def count_ages(records: List[Record]):
+    res = defaultdict(int)
+    for r in records:
+        res[r.age] += 1
+    return res
+
+
+def character_types(text):
+    chars = set()
+    for c in text:
+        chars.add(c)
+    return chars
+
+def statistics(records: List[Record]):
+    print("Total records")
+    print("--------------------------------")
+    print(len(records))
+    print("\nGender:Count of the given gender")
+    print("--------------------------------")
+    gender_stat = count_genders(records)
+    gender_stat = sorted(gender_stat.items(), key=lambda x: x[1], reverse=True)
+    for gender, count in gender_stat:
+        print(gender + ":" + str(count))
+
+    print("\nAge:Count of the given age")
+    print("----------------------------")
+
+    age_stat = count_ages(records)
+    age_stat = sorted(age_stat.items(), key=lambda x: x[1], reverse=True)
+    for age, count in age_stat:
+        print(str(age) + ":" + str(count))
+
+    print("\nIllness:Count of the given illness")
+    print("------------------------------------")
+
+    illness_stat = count_illness_types(records)
+    illness_stat = sorted(illness_stat.items(), key=lambda x: x[1], reverse=True)
+    for illness, count in illness_stat:
+        print(illness + ":" + str(count))
+
 
 def main(argv):
     if len(argv) < 1:
@@ -101,8 +191,10 @@ def main(argv):
             exit(255)
         filepath = argv[1]
         records = reload(filepath)
-        for r in records:
-            print(r)
+        statistics(records)
+
+
+
 
 
 
