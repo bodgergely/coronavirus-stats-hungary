@@ -162,12 +162,18 @@ def statistics(records: List[Record]):
     for gender, count in gender_stat:
         print(gender + ":" + str(count))
 
-    print("\nAge:Count of the given age")
-    print("----------------------------")
+
 
     age_stat = count_ages(records)
-    age_stat = sorted(age_stat.items(), key=lambda x: x[1], reverse=True)
-    for age, count in age_stat:
+    age_to_count = sorted(age_stat.items(), key=lambda x: x[1], reverse=True)
+    print("\nAge:Count of the given age")
+    print("----------------------------")
+    for age, count in age_to_count:
+        print(str(age) + ":" + str(count))
+    print("\nAge:Count of the given age")
+    print("----------------------------")
+    age_to_count = sorted(age_stat.items(), key=lambda x: x[0], reverse=True)
+    for age, count in age_to_count:
         print(str(age) + ":" + str(count))
 
     print("\nIllness:Count of the given illness")
