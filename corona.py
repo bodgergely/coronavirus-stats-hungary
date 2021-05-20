@@ -49,8 +49,9 @@ def scrape(argv):
     parse_errors = 0
     unicode_errors = 0
     for page in range(start_page, end_page+1):
-        sys.stderr.write("Page: " + str(page))
         url = create_url(page)
+        sys.stderr.write(f"Downloading {url}\n")
+        sys.stderr.flush()
         html_text = requests.get(url).text
         soup = BeautifulSoup(html_text, "html.parser")
         rows = parse(soup)
@@ -193,10 +194,9 @@ def main(argv):
         records = reload(filepath)
         statistics(records)
 
-
-
-
-
-
+"""
+./corona.py scrape 0 586 > records.txt
+./corona.py reload ./records.txt > stats.txt
+"""
 if __name__ == "__main__":
     main(sys.argv[1:])
